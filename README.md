@@ -103,6 +103,8 @@ Sample pay-per-report transfers (open each for full transfer details):
 These links prove **on-chain settlement** (always viewable on HashScan).  
 This demo defaults to **`ALLOW_PAYMENT_REUSE=true`** so the same `transactionId` can unlock the sample PDF more than once for testing. Set `ALLOW_PAYMENT_REUSE=false` for one-payment → one-unlock behavior.
 
+Paste either the **full HashScan URL** or the path id (e.g. `1785524623.823584002`) into Unlock PDF — both work.
+
 ## References
 
 - [Hedera x402 docs](https://docs.hedera.com/solutions/ai/x402)  
