@@ -181,9 +181,16 @@ export function paymentRequirements(pricing, resourceUrl) {
   };
 }
 
+/**
+ * Accepts:
+ * - 0.0.x@seconds.nanos  (HashPack / many UIs)
+ * - 0.0.x-seconds-nanos (mirror path form)
+ * - seconds.nanos only (HashScan URL path often uses consensus timestamp)
+ * - full HashScan URL
+ */
 export function normalizeTxId(raw) {
   let s = String(raw || '').trim();
-  if (!s) return { id: '', variants: [] };
+  if (!s) return { id: '', kind: 'empty', variants: [] };
   try {
     if (s.startsWith('http')) {
       const u = new URL(s);
@@ -195,22 +202,30 @@ export function normalizeTxId(raw) {
     /* keep */
   }
   s = s.split('?')[0].split('#')[0].trim();
+
   const variants = new Set([s]);
   const at = s.match(/^(0\.0\.\d+)@(\d+)\.(\d+)$/);
   if (at) {
     const dash = `${at[1]}-${at[2]}-${at[3]}`;
     variants.add(dash);
-    return { id: dash, variants: [...variants] };
+    variants.add(`${at[2]}.${at[3]}`); // consensus ts
+    return { id: dash, kind: 'txid', variants: [...variants] };
   }
   const dash = s.match(/^(0\.0\.\d+)-(\d+)-(\d+)$/);
   if (dash) {
     variants.add(`${dash[1]}@${dash[2]}.${dash[3]}`);
-    return { id: s, variants: [...variants] };
+    variants.add(`${dash[2]}.${dash[3]}`);
+    return { id: s, kind: 'txid', variants: [...variants] };
   }
-  return { id: s, variants: [...variants] };
+  // HashScan consensus timestamp only: 1785524623.823584002
+  const ts = s.match(/^(\d+)\.(\d+)$/);
+  if (ts) {
+    return { id: s, kind: 'timestamp', variants: [s] };
+  }
+  return { id: s, kind: 'unknown', variants: [...variants] };
 }
 
-async function fetchMirrorTx(tid) {
+async function fetchMirrorTxById(tid) {
   const base = mirrorBase();
   const pathRes = await fetch(`${base}/api/v1/transactions/${encodeURIComponent(tid)}`);
   if (pathRes.ok) {
@@ -227,25 +242,62 @@ async function fetchMirrorTx(tid) {
   return null;
 }
 
+/** HashScan links often use consensus timestamp, not transaction id */
+async function fetchMirrorTxByTimestamp(ts) {
+  const base = mirrorBase();
+  for (const q of [`timestamp=eq:${ts}`, `timestamp=${ts}`]) {
+    const res = await fetch(`${base}/api/v1/transactions?${q}&limit=5`);
+    if (!res.ok) continue;
+    const list = await res.json();
+    const txs = list?.transactions || [];
+    if (txs.length) {
+      // Prefer CRYPTOTRANSFER success
+      const prefer =
+        txs.find(
+          (t) =>
+            String(t.result) === 'SUCCESS' &&
+            String(t.name || '').toUpperCase().includes('TRANSFER')
+        ) || txs.find((t) => String(t.result) === 'SUCCESS') || txs[0];
+      return prefer;
+    }
+  }
+  return null;
+}
+
 /**
  * Verify merchant received exact settlement (HBAR tinybars or USDC base units).
  * This is the resource-server gate after client pays on Hedera.
  */
 export async function verifyMirrorPayment(txId, pricing) {
-  const { id, variants } = normalizeTxId(txId);
+  const { id, kind, variants } = normalizeTxId(txId);
   if (!id) return { ok: false, error: 'Missing transaction id' };
 
   let tx = null;
   let used = id;
-  for (const v of variants) {
-    if (v.includes('@')) continue;
-    tx = await fetchMirrorTx(v);
-    if (tx) {
-      used = v;
-      break;
+
+  if (kind === 'timestamp') {
+    tx = await fetchMirrorTxByTimestamp(id);
+    if (tx?.transaction_id) used = tx.transaction_id;
+  } else {
+    for (const v of variants) {
+      if (v.includes('@')) continue;
+      if (/^\d+\.\d+$/.test(v)) {
+        tx = await fetchMirrorTxByTimestamp(v);
+        if (tx) {
+          used = tx.transaction_id || v;
+          break;
+        }
+        continue;
+      }
+      tx = await fetchMirrorTxById(v);
+      if (tx) {
+        used = v;
+        break;
+      }
     }
+    if (!tx) tx = await fetchMirrorTxById(id);
   }
-  if (!tx) tx = await fetchMirrorTx(id);
+
   if (!tx) {
     return {
       ok: false,

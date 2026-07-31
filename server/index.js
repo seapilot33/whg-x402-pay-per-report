@@ -30,14 +30,15 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = Number(process.env.PORT || 4020);
 /**
- * Replay protection: one on-chain payment → one unlock.
- * For public demos / bounty judges re-trying README example txs, default is OFF
- * (ALLOW_PAYMENT_REUSE=true). Set ALLOW_PAYMENT_REUSE=false for production-like behavior.
+ * Replay protection (one payment → one unlock).
+ * This open-source demo always allows reuse so README HashScan example txs
+ * work for judges repeatedly. Production WorldHashGraph still enforces one-use.
+ * Set ALLOW_PAYMENT_REUSE=false only if you want local one-unlock testing.
  */
-const allowPaymentReuse = (() => {
-  const v = (process.env.ALLOW_PAYMENT_REUSE || 'true').toLowerCase();
+function isPaymentReuseAllowed() {
+  const v = String(process.env.ALLOW_PAYMENT_REUSE ?? 'true').toLowerCase().trim();
   return v !== 'false' && v !== '0' && v !== 'off';
-})();
+}
 const usedPayments = new Set();
 
 app.use(cors());
@@ -108,10 +109,10 @@ app.post('/api/report', async (req, res) => {
       const settled = await settleViaFacilitator(payload);
       if (settled.ok) {
         const key = settled.transactionId || JSON.stringify(payload).slice(0, 64);
-        if (!allowPaymentReuse && usedPayments.has(key)) {
+        if (!isPaymentReuseAllowed() && usedPayments.has(key)) {
           return res.status(409).json({ error: 'Payment already used' });
         }
-        if (!allowPaymentReuse) usedPayments.add(key);
+        if (!isPaymentReuseAllowed()) usedPayments.add(key);
         paid = true;
         paymentMeta = {
           method: 'x402-facilitator',
@@ -131,11 +132,11 @@ app.post('/api/report', async (req, res) => {
   } else if (txId) {
     const v = await verifyMirrorPayment(txId, pricing);
     const key = v.normalizedId || normalizeTxId(txId).id || txId;
-    if (v.ok && !allowPaymentReuse && usedPayments.has(key)) {
+    if (v.ok && !isPaymentReuseAllowed() && usedPayments.has(key)) {
       return res.status(409).json({
         error: 'Payment already used for a report',
         transactionId: key,
-        hint: 'Set ALLOW_PAYMENT_REUSE=true (default in this demo) to re-unlock with the same tx for testing.',
+        hint: 'Restart with ALLOW_PAYMENT_REUSE=true (demo default) to re-unlock with the same tx.',
       });
     }
     if (!v.ok) {
@@ -148,7 +149,7 @@ app.post('/api/report', async (req, res) => {
         merchant_hashscan: hashscanAccount(pricing.pay_to),
       });
     }
-    if (!allowPaymentReuse) usedPayments.add(key);
+    if (!isPaymentReuseAllowed()) usedPayments.add(key);
     paid = true;
     // Prefer human @ form for HashScan links when possible
     const displayId = txId.includes('@') ? txId : key;
@@ -206,7 +207,7 @@ app.listen(PORT, () => {
   console.log(`whg-x402-pay-per-report on http://localhost:${PORT}`);
   console.log(`Merchant payTo: ${payTo()}`);
   console.log(
-    `Payment reuse: ${allowPaymentReuse ? 'ALLOWED (demo default)' : 'BLOCKED (one unlock per tx)'}`
+    `Payment reuse: ${isPaymentReuseAllowed() ? 'ALLOWED (demo default)' : 'BLOCKED (one unlock per tx)'}`
   );
   console.log(`Pricing: http://localhost:${PORT}/api/pricing`);
   console.log(`Demo UI:  http://localhost:${PORT}/`);
