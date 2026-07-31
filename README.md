@@ -16,40 +16,29 @@ Open-source **pay-per-request** demo: unlock a sample intelligence PDF after an 
 
 This matches the bounty’s **pay-to-read** style architecture: discrete pay → unlock content on Hedera rails.
 
-## Quick start
+## Quick start (Path A — our merchant)
+
+Uses WorldHashGraph merchant **`0.0.5823639`** and the **example HashScan settlements** below. No HashPack required. Payment reuse is on by default, so every judge can unlock repeatedly with the same links (txs are never “used up”).
 
 ```bash
 git clone https://github.com/seapilot33/whg-x402-pay-per-report.git
 cd whg-x402-pay-per-report
 cp .env.example .env
-# Defaults work for judges (merchant 0.0.5823639 + payment reuse on).
-# Optional: set REPORT_PAY_TO to your own testnet account if you will pay yourself.
+# Merchant is already set for Path A:
+# REPORT_PAY_TO=0.0.5823639
 npm install
 npm start
 ```
 
 Open [http://localhost:4020](http://localhost:4020)
 
-### Path A — judges / no wallet (recommended)
-
-Uses the **example settlements** already on HashScan. **Does not consume or “use up” those txs** — this demo defaults to `ALLOW_PAYMENT_REUSE=true`, so every judge can unlock repeatedly with the same links.
-
-1. Confirm **Merchant** is `0.0.5823639` (from `.env`; do not type it in the browser)
+1. Confirm **Merchant** shows **`0.0.5823639`** (from `.env` — not typed in the browser)
 2. Click **POST /api/report (expect 402)** — inspect PaymentRequirements
-3. Paste any example link (or just the timestamp id) → **Unlock PDF**:
+3. Paste any example settlement (full URL or timestamp id) → **Unlock PDF**:
    - `https://hashscan.io/testnet/transaction/1785524623.823584002`
    - `https://hashscan.io/testnet/transaction/1785524448.269824104`
    - `https://hashscan.io/testnet/transaction/1785520906.165578104`
-4. Full URL or path id (e.g. `1785524623.823584002`) both work
-
-### Path B — pay yourself with HashPack
-
-1. Set `REPORT_PAY_TO=0.0.YOUR_TESTNET_ACCOUNT` in `.env`, restart the server
-2. Confirm **Merchant** shows that account
-3. In **HashPack (Testnet)**, send the displayed HBAR amount **to that merchant**
-4. Paste the new HashScan transaction id / URL → **Unlock PDF**
-
-> **Note:** Example HashScan txs paid **to `0.0.5823639`**. They only verify if `REPORT_PAY_TO` is that merchant (Path A). If you switch to your own merchant (Path B), paste a payment you made to *your* account.
+4. Example path id only also works: `1785524623.823584002`
 
 ### Merchant account (`REPORT_PAY_TO`)
 
@@ -57,13 +46,15 @@ There is **no browser field** for the merchant id — the **resource server** ow
 
 | Where | What |
 |-------|------|
-| `.env` | `REPORT_PAY_TO=0.0.5823639` (demo default; or your testnet account) |
+| `.env` / `.env.example` | `REPORT_PAY_TO=0.0.5823639` (our merchant — Path A) |
 | UI | Displays merchant + HashScan link from `GET /api/pricing` |
 | Restart | Required after changing `.env` |
 | Reuse | `ALLOW_PAYMENT_REUSE=true` by default — sample txs never “block” for later judges |
 
 Merchant HashScan:  
 `https://hashscan.io/testnet/account/0.0.5823639`
+
+Optional: to pay yourself with HashPack instead, set `REPORT_PAY_TO` to your own testnet account, restart, send the displayed HBAR to that account, then paste *your* new transaction id. Example settlements only verify against **`0.0.5823639`**.
 
 ## HTTP API
 
