@@ -15,8 +15,21 @@ export function env(name, fallback = '') {
   return (process.env[name] || fallback).trim();
 }
 
+/** Treat placeholders / empty as unset so fallbacks work */
+function accountEnv(name) {
+  const v = env(name, '');
+  if (!v) return '';
+  if (/YOUR_|PLACEHOLDER|TODO|xxx/i.test(v)) return '';
+  if (!/^0\.0\.\d+$/.test(v)) return '';
+  return v;
+}
+
 export function payTo() {
-  return env('REPORT_PAY_TO', env('HEDERA_ACCOUNT_ID', '0.0.5823639'));
+  return (
+    accountEnv('REPORT_PAY_TO') ||
+    accountEnv('HEDERA_ACCOUNT_ID') ||
+    '0.0.5823639'
+  );
 }
 
 export function network() {
