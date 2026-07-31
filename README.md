@@ -88,6 +88,18 @@ Returns list price (1 USDC), HBAR equivalent, merchant, facilitator, and `accept
 | **Testnet** | HBAR (`0.0.0`) | ≈ $1 at live HBAR/USD; easy faucet funding |
 | **Mainnet** | Circle USDC `0.0.456858` | When `HEDERA_NETWORK=mainnet` |
 
+## Example on-chain settlements (Hedera testnet)
+
+Merchant (receives report payments):
+
+- https://hashscan.io/testnet/account/0.0.5823639
+
+Sample pay-per-report transfers (open each for full transfer details):
+
+- https://hashscan.io/testnet/transaction/1785524623.823584002  
+- https://hashscan.io/testnet/transaction/1785524448.269824104  
+- https://hashscan.io/testnet/transaction/1785520906.165578104  
+
 ## References
 
 - [Hedera x402 docs](https://docs.hedera.com/solutions/ai/x402)  
