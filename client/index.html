@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>WHG × Hedera x402 — Pay-per-report demo</title>
+    <style>
+      :root {
+        --bg: #0c0c0e;
+        --card: #141417;
+        --text: #f2f2f4;
+        --muted: #9a9aa3;
+        --spark: #f5a524;
+        --border: #2a2a30;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.5;
+      }
+      main {
+        max-width: 640px;
+        margin: 0 auto;
+        padding: 2rem 1.25rem 4rem;
+      }
+      h1 {
+        font-size: 1.35rem;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+      }
+      .spark {
+        color: var(--spark);
+      }
+      p,
+      li {
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1rem 1.1rem;
+        margin: 1rem 0;
+      }
+      label {
+        display: block;
+        font-size: 0.75rem;
+        color: var(--muted);
+        margin-bottom: 0.35rem;
+      }
+      input {
+        width: 100%;
+        background: #0a0a0c;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--text);
+        padding: 0.55rem 0.7rem;
+        font-size: 0.85rem;
+      }
+      button {
+        background: var(--spark);
+        color: #111;
+        border: none;
+        border-radius: 8px;
+        padding: 0.55rem 0.9rem;
+        font-weight: 600;
+        font-size: 0.85rem;
+        cursor: pointer;
+        margin-right: 0.5rem;
+        margin-top: 0.75rem;
+      }
+      button.ghost {
+        background: transparent;
+        color: var(--text);
+        border: 1px solid var(--border);
+      }
+      code,
+      pre {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.78rem;
+      }
+      pre {
+        background: #0a0a0c;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 0.75rem;
+        overflow: auto;
+        color: #c8c8d0;
+      }
+      .err {
+        color: #f87171;
+      }
+      .ok {
+        color: #34d399;
+      }
+      a {
+        color: var(--spark);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1><span class="spark">WorldHashGraph</span> × Hedera x402</h1>
+      <p>
+        Open-source <strong>pay-per-request</strong> demo: unlock a sample intelligence PDF by
+        paying <strong class="spark">1 USDC</strong> (HBAR stand-in on testnet) via HTTP
+        <code>402 Payment Required</code> + Hedera settlement.
+      </p>
+
+      <div class="card">
+        <div id="price">Loading pricing…</div>
+        <p style="margin: 0.75rem 0 0">
+          Merchant (<code>REPORT_PAY_TO</code> from server <code>.env</code>):
+          <a id="merchantLink" href="#" target="_blank" rel="noreferrer">—</a>
+        </p>
+        <p style="margin: 0.35rem 0 0; font-size: 0.8rem">
+          Set merchant in <code>.env</code>, then restart <code>npm start</code>. Clients cannot change
+          <code>payTo</code> in the browser.
+        </p>
+      </div>
+
+      <div class="card">
+        <h2 style="font-size: 0.95rem; margin: 0 0 0.5rem">1. Request without payment → 402</h2>
+        <button type="button" id="btn402">POST /api/report (expect 402)</button>
+        <pre id="out402">// response appears here</pre>
+      </div>
+
+      <div class="card">
+        <h2 style="font-size: 0.95rem; margin: 0 0 0.5rem">2. Pay on HashPack (testnet)</h2>
+        <p>
+          Send the HBAR amount shown above to the merchant account, then paste the HashScan
+          transaction id (format <code>0.0.x@seconds.nanos</code>).
+        </p>
+        <label for="tx">Transaction id</label>
+        <input id="tx" placeholder="0.0.9830170@1785410887.913635863" />
+        <button type="button" id="btnPay">Unlock PDF (verify + download)</button>
+        <button type="button" class="ghost" id="btnHashscan">Open merchant HashScan</button>
+        <p id="msg" style="margin-top: 0.75rem"></p>
+      </div>
+
+      <div class="card">
+        <h2 style="font-size: 0.95rem; margin: 0 0 0.5rem">How this maps to x402</h2>
+        <ol>
+          <li>Client requests protected resource</li>
+          <li>Server returns <strong>HTTP 402</strong> + <code>accepts[]</code> PaymentRequirements</li>
+          <li>Client settles exact amount on Hedera (HBAR or USDC) to server <code>payTo</code></li>
+          <li>Server verifies (mirror and/or facilitator) and returns the PDF</li>
+        </ol>
+      </div>
+    </main>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

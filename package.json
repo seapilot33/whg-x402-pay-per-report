@@ -1,0 +1,35 @@
+{
+  "name": "whg-x402-pay-per-report",
+  "version": "1.0.0",
+  "private": false,
+  "description": "Hedera x402 pay-per-request intelligence report (HTTP 402 + exact scheme on Hedera testnet). Open-source slice for the Hedera x402 bounty.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "hedera",
+    "x402",
+    "http-402",
+    "hbar",
+    "usdc",
+    "hashpack",
+    "micropayments",
+    "pay-per-request"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/seapilot33/whg-x402-pay-per-report.git"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "pdfkit": "^0.16.0"
+  }
+}
