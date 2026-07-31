@@ -61,7 +61,7 @@ Returns list price (1 USDC), HBAR equivalent, merchant, facilitator, and `accept
 | (none) | **402** + `x402Version` + `accepts` |
 | `{ "transactionId": "0.0.x@s.n" }` | Mirror-verify → **PDF** |
 | `PAYMENT-SIGNATURE` / `paymentPayload` | Facilitator verify/settle path → **PDF** |
-| Reused payment | **409** replay protection |
+| Reused payment | **409** only if `ALLOW_PAYMENT_REUSE=false` |
 
 ## Architecture
 
@@ -99,6 +99,9 @@ Sample pay-per-report transfers (open each for full transfer details):
 - https://hashscan.io/testnet/transaction/1785524623.823584002  
 - https://hashscan.io/testnet/transaction/1785524448.269824104  
 - https://hashscan.io/testnet/transaction/1785520906.165578104  
+
+These links prove **on-chain settlement** (always viewable on HashScan).  
+This demo defaults to **`ALLOW_PAYMENT_REUSE=true`** so the same `transactionId` can unlock the sample PDF more than once for testing. Set `ALLOW_PAYMENT_REUSE=false` for one-payment → one-unlock behavior.
 
 ## References
 
